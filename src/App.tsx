@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Ellipse, Group, Layer, Line, Rect, Stage, Text, Transformer } from "react-konva";
 import type Konva from "konva";
-import { Armchair, BookOpen, BoxSelect, ChevronDown, ChevronRight, Monitor, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import { Armchair, BookOpen, BoxSelect, ChevronDown, ChevronRight, Download, Monitor, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 
 type FurnitureKind = "rect" | "circle" | "ellipse";
 
@@ -421,6 +421,7 @@ function App() {
   });
 
   const stageWrapRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<Konva.Stage>(null);
   const itemRefs = useRef<Record<string, Konva.Group | null>>({});
   const transformerRef = useRef<Konva.Transformer>(null);
   const [stageSize, setStageSize] = useState({ width: 900, height: 640 });
@@ -758,6 +759,20 @@ function App() {
     setSelectedId(null);
   };
 
+  const exportCanvasImage = () => {
+    const stage = stageRef.current;
+    if (!stage) {
+      return;
+    }
+
+    const dataUrl = stage.toDataURL({ pixelRatio: 2, mimeType: "image/png" });
+    const link = document.createElement("a");
+    const fileName = `${(room.name || "room-layout").replace(/[\\/:*?"<>|]/g, "_")}.png`;
+    link.href = dataUrl;
+    link.download = fileName;
+    link.click();
+  };
+
   const moveRoom = (id: string, direction: -1 | 1) => {
     setRooms((currentRooms) => {
       const fromIndex = currentRooms.findIndex((layout) => layout.id === id);
@@ -803,9 +818,19 @@ function App() {
                 実寸比率の2Dキャンバスで家具の置き心地を検証
               </p>
             </div>
-            <div className="flex items-center gap-2 rounded border border-stone-300 bg-white px-3 py-2 text-sm text-slate-600 shadow-sm">
-              <Save size={16} />
-              LocalStorage自動保存
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={exportCanvasImage}
+                className="inline-flex h-10 items-center gap-2 rounded border border-[#337563] bg-white px-3 text-sm font-black text-[#337563] shadow-sm transition hover:bg-[#337563] hover:text-white"
+              >
+                <Download size={16} />
+                画像保存
+              </button>
+              <div className="flex h-10 items-center gap-2 rounded border border-stone-300 bg-white px-3 text-sm text-slate-600 shadow-sm">
+                <Save size={16} />
+                LocalStorage自動保存
+              </div>
             </div>
           </div>
         </header>
@@ -1315,6 +1340,7 @@ function App() {
             </div>
             <div ref={stageWrapRef} className="h-[calc(100vh-154px)] min-h-[500px] w-full">
               <Stage
+                ref={stageRef}
                 width={stageSize.width}
                 height={stageSize.height}
                 onMouseDown={(event) => {
